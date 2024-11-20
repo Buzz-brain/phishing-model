@@ -87,5 +87,9 @@ def preprocess_url(url):
     # Convert the features list into a numpy array
     return np.array(features)
 
+import os
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Get the port from the environment or default to 5000
+    app.run(host='0.0.0.0', port=port)
+
