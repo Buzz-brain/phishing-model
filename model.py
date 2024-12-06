@@ -65,6 +65,15 @@ print(confusion_matrix(y_test, y_pred))
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 
+# Print all feature names
+print(X.columns.tolist())
+
+# Save feature names to a text file
+with open('features.txt', 'w') as f:
+    for column in X.columns:
+        f.write(f"{column}\n")
+
+
 import joblib
 from sklearn.preprocessing import StandardScaler
 

@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import joblib
-import numpy as np
+import pandas as pd
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -9,6 +10,10 @@ app = Flask(__name__)
 model = joblib.load('phishing_model.pkl')
 scaler = joblib.load('scaler.pkl')
 
+# Load feature names from the features file
+with open('features.txt', 'r') as f:
+    feature_columns = [line.strip() for line in f.readlines()]
+
 # Define the prediction route
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -16,16 +21,16 @@ def predict():
         # Get the input JSON data from the request
         data = request.get_json()
 
-        # Extract features from the input data (make sure to get the correct feature names)
-        features = np.array([data['length_url'], data['length_hostname'], data['ip'], data['nb_dots'],
-                             data['nb_hyphens'], data['nb_at'], data['domain_age'], data['web_traffic'],
-                             data['dns_record'], data['google_index'], data['page_rank']])
+        # Validate input
+        if not isinstance(data, dict):
+            raise ValueError("Input data must be a JSON object.")
 
-        # Reshape the input to match the expected shape of the model (1 sample, multiple features)
-        features = features.reshape(1, -1)
+        # Create a DataFrame with a single row, using the feature names
+        # Fill missing features with 0
+        input_data = pd.DataFrame([{key: data.get(key, 0) for key in feature_columns}])
 
         # Scale the input using the same scaler used during training
-        scaled_features = scaler.transform(features)
+        scaled_features = scaler.transform(input_data)
 
         # Predict using the loaded model
         prediction = model.predict(scaled_features)
@@ -37,8 +42,6 @@ def predict():
         return jsonify({'error': str(e)}), 400
 
 # Run the app
-import os
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Get the port from the environment or default to 5000
     app.run(host='0.0.0.0', port=port)
