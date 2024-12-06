@@ -18,28 +18,30 @@ with open('features.txt', 'r') as f:
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get the input JSON data from the request
+        # Get the input JSON data
         data = request.get_json()
 
-        # Validate input
-        if not isinstance(data, dict):
-            raise ValueError("Input data must be a JSON object.")
+        # Extract features and fill missing ones with defaults (0)
+        input_features = pd.DataFrame([data], columns=feature_columns).fillna(0)
 
-        # Create a DataFrame with a single row, using the feature names
-        # Fill missing features with 0
-        input_data = pd.DataFrame([{key: data.get(key, 0) for key in feature_columns}])
+        print("Raw Input Features:", input_features)
 
-        # Scale the input using the same scaler used during training
-        scaled_features = scaler.transform(input_data)
+        # Scale the input
+        scaled_features = scaler.transform(input_features)
 
-        # Predict using the loaded model
+        print("Scaled Features:", scaled_features)
+
+        # Predict
         prediction = model.predict(scaled_features)
 
-        # Return the result as JSON
+        # Debug prediction output
+        print("Prediction:", prediction)
+
         return jsonify({'prediction': 'phishing' if prediction[0] == 1 else 'legitimate'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
 
 # Run the app
 if __name__ == '__main__':
